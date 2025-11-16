@@ -44,6 +44,11 @@ class CIFParser:
     
     #Parsing lines and retrieving cell properties
     for i in range(startIndex): 
+      if("_diffrn_ambient_temperature" in alllines[i]):
+        val=(alllines[i].split(" ")[1])
+        if(val=="?"): #Some files do not have a temperature associated with them
+          val=283
+        self.cellvalues["structure_temperature"]=(float(val))
       if("_cell_length_a" in alllines[i]):
         val=(alllines[i].split(" ")[1])
         if("(" in val): #Used to deal with the uncertainty factor in the cell length
@@ -125,7 +130,11 @@ class CIFParser:
   def containsAtom(self,symbol):
     atoms=self.getElementAtoms(symbol)
     return len(atoms)>0
-  def getAtomsInARadius(self,targetAtom,radius):
+  def getAtomsInARadius(self,targetAtom : Atom,radius: float):
+    '''
+    rtype: [[Atom, float]]
+    float represents the distance between Atom and the target atom
+    '''
     output=[]
     for atom in self.Atoms:
       dist=atom.getDistance(targetAtom)

@@ -30,8 +30,22 @@
 
 # # Display the plot
 # plt.show()
-arr=[45, 32, 38, 47, 51, 33, 42, 28, 35, 44, 39, 29, 30, 34, 35, 40, 30, 48, 30, 40]
-arr.sort()
-print(arr)
-print(sum(arr))
-print(len(arr))
+words=["is","valid","right"]
+variableName="IsValid"
+
+
+def question(words,variableName):
+    start=0
+    for i,c in enumerate(variableName):
+        if(i==0):
+            continue
+        if(ord(c) in range(65,91)):
+            onevar=variableName[start:i]
+            start=i
+            if(onevar.lower() not in words):
+                print(onevar,i,start)
+                return False
+    return True
+
+
+print(question(words,variableName))

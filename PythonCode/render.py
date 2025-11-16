@@ -58,8 +58,19 @@ class ExportUnit:
     
     exportGrid.close()
   @staticmethod
-  def exportXY(xData,yData,xTitle,yTitle):
-    pass
+  def exportXY(xData,yData,xTitle,yTitle,filename):
+    exportGrid= xl.Workbook(f"{filename}.xlsx")
+    exportSheet=exportGrid.add_worksheet(f"{yTitle}")
+    row=0
+    for x,y in zip(xData,yData):
+      exportSheet.write(0,0,xTitle)
+      exportSheet.write(0,1,yTitle)
+      exportSheet.write(row,0,x)
+      exportSheet.write(row,1,y)
+      row+=1
+    
+    exportGrid.close()
+
       
     
 

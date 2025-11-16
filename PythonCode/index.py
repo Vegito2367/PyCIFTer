@@ -42,13 +42,13 @@ def getTorsionAngle(A,B,C,D):
 
 ######################################################SNSManipulation
 
-def IdentifySNSBonds(parser,lowerLimit,upperLimit,invalidFiles):
+def IdentifySNSBonds(molecule,lowerLimit,upperLimit,invalidFiles):
       sulphurs=[]
       nitrogens=[]
       distanceValues={}
       occurences={}
-      nitrogens=parser.getElementAtoms("N")
-      sulphurs=parser.getElementAtoms("S")
+      nitrogens=molecule.getElementAtoms("N")
+      sulphurs=molecule.getElementAtoms("S")
       
       
       for n in nitrogens:
@@ -63,7 +63,7 @@ def IdentifySNSBonds(parser,lowerLimit,upperLimit,invalidFiles):
               occurences[n]=1
       
       if(len(distanceValues)==0):
-        invalidFiles.append([parser.fileName,"No S-N bonds found"])
+        invalidFiles.append([molecule.fileName,"No S-N bonds found"])
 
         
       SNSBonds=[]
@@ -85,7 +85,7 @@ def IdentifySNSBonds(parser,lowerLimit,upperLimit,invalidFiles):
             # leftd=distanceValues[(g.center,g.left)]
             # rightd=distanceValues[(g.center,g.right)]
             
-            #ExportData.append(ExportUnit(parser.fileName,g.bondAngle,[center,left],leftd,[center,right],rightd))
+            #ExportData.append(ExportUnit(molecule.fileName,g.bondAngle,[center,left],leftd,[center,right],rightd))
             SNSBonds.append(g)
       return SNSBonds
 
@@ -124,20 +124,29 @@ def MetalBinding():
   #ExportDataTorsion=[]
   TorisonAngleAverages=[]
   torsionDeltas=[]
-    
-
+  temperatures=[]
+  tempperfiles=[]
+  numcifswithmetalpresent:int=0
+  ciffilesnameswithmetal:str=""
+  counthash={}
+  tempMetalBound=[]
+  metalBoundAngle=[]
+  metalBoundLengthAvg=[]
   
   for file in datasetPath:
     
     print(f"Progress: {progress}/{len(datasetPath)}")
     try:
-        parser=CIFParser(f"{folder}/{file}")
-        if(not parser.validFile):
+        molecule=CIFParser(f"{folder}/{file}")
+        if(not molecule.validFile):
           invalidFiles.append([file,"Invalid Input"])
           progress+=1
           continue
-
-        SNSBonds=IdentifySNSBonds(parser,1.5,1.7,invalidFiles)
+        currentTemp = -1
+        if("structure_temperature" in molecule.cellvalues):
+          currentTemp=molecule.cellvalues["structure_temperature"]
+          tempperfiles.append(currentTemp)
+        SNSBonds=IdentifySNSBonds(molecule,1.5,1.7,invalidFiles)
         totalSNS+=len(SNSBonds)
         for bond in SNSBonds:
           temp=[]
@@ -148,10 +157,11 @@ def MetalBinding():
           bondlengthAverage.append((temp[0]+temp[1])/2)
           bondlengthDeltas.append(abs(temp[0]-temp[1]))
           AnglePlotValues.append(bond.bondAngle)
-
+          temperatures.append(currentTemp)
+          surroundingAtoms = molecule.getAtomsInARadius(bond.center,3)
           for atomSymbol in atomToLookFor:
-            surroundingAtoms = parser.getAtomsInARadius(bond.center,3)
             metalBound=False
+            metalPresent=False
             for atom,distance in surroundingAtoms:
               if(atom.symbol==atomSymbol):#Checks if the given atom is one of the metals we are looking for
                 if(not metalBound):
@@ -161,11 +171,21 @@ def MetalBinding():
                       fudgeFactorMetalsBound[factor]+=1
 
                   if(distance<=(bond.center.covalentRadius + atom.covalentRadius+currentFudgeFactor)):
-                    atomOccurences[atomSymbol].append("Metal present and N-bound to TFSI")  #The atom symbol is counted as a metal connected to the TFSI
+                    if(file not in counthash):
+                      counthash[file]=1
+                    else:
+                      counthash[file]+=1
+                    atomOccurences[atomSymbol].append("Metal present and N-bound to TFSI")
+                      #The atom symbol is counted as a metal connected to the TFSI
+                    tempMetalBound.append(currentTemp)
+                    metalBoundAngle.append(bond.bondAngle)
+                    metalBoundLengthAvg.append((temp[0]+temp[1])/2)
+
                     metalBound=True
             
             if(not metalBound):
-              if(parser.containsAtom(atomSymbol)):
+              if(molecule.containsAtom(atomSymbol)):
+                metalPresent=True
                 atomOccurences[atomSymbol].append("Metal present but not N–bound to TFSI")  #The atom symbol is present in the compound but not connected to the TFSI
               else:
                 atomOccurences[atomSymbol].append("No metal present in the structure")
@@ -174,7 +194,7 @@ def MetalBinding():
           '''
           Below code calculates torsion angles and adds them to graph data
           '''
-          # carbons = parser.getElementAtoms("C")
+          # carbons = molecule.getElementAtoms("C")
           # cDistLeft,cDistRight=100,100
           # cLeft,cRight=None,None
           # for c in carbons:
@@ -202,6 +222,7 @@ def MetalBinding():
           #names.append(f"{file} {bond.left} {bond.center} {bond.right} {TorsionAngleAverages[-1]}") - Alternative names append
           
           names.append(f"{file} {bond.left} {bond.center} {bond.right}")
+        
           
           
     except Exception as e:
@@ -218,6 +239,7 @@ def MetalBinding():
   metalBoundCount=0
   metalPresent=0
   MetalPresenceCount=0
+
   for atomSymbol in atomOccurences:
     metalCount=atomOccurences[atomSymbol].count("Metal present and N-bound to TFSI")
     metalPresent=atomOccurences[atomSymbol].count("Metal present but not N–bound to TFSI")
@@ -239,17 +261,31 @@ def MetalBinding():
   print("Total SNS Bonds: ",totalSNS)
   print("Number of Avgs",len(bondlengthAverage))
   val = (metalBoundCount/totalSNS)*100
-  print(f"The number of metals for fudge Factor 1 = {fudgeFactorMetalsBound[currentFudgeFactor]}")
+  print(len(invalidFiles))
+  print(invalidFiles)
+  # for occ in fudgeFactorMetalsBound:
+  #   print(f"The number of metals for fudge Factor {occ} = {fudgeFactorMetalsBound[occ]}")
+  #print(counthash)
+  print(f"Number of CIFs with coordinated metals: {len(counthash)}")
+  print("the number of temperatures=",len(temperatures))
   '''
   Below code uses Render() class to create matplotlib graphs
   '''
 
-  renderModule.barGraphFrequencies(histX,histY,totalSNS,"Metal Presence in Compound","Element","Frequency","Percentage",20)
+  # renderModule.barGraphFrequencies(histX,histY,totalSNS,"Metal Presence in Compound","Element","Frequency","Percentage",20)
   # renderModule.barGraphFrequencies(["Metal bound to\nnitrogen in structure","Metal not bound\nbut present in structure"],[metalBoundCount,MetalPresenceCount],totalSNS,"","","Frequency","Percentage of all\nmetal-containing structures",40)
   # renderModule.barGraph(["Metal-containing","Metal-free"],[MetalPresenceCount,totalSNS-MetalPresenceCount],"","","Frequency")
   # renderModule.plotHistogram(AnglePlotValues,"SNS Angle Spread","Angle (deg)","Frequency")
   # renderModule.plotHistogram(bondlengthAverage,"SN Distance Spread","SN Distance (Ang)","Frequency")
   # renderModule.plotLine(list(fudgeFactorMetalsBound.keys()),list(fudgeFactorMetalsBound.values()),"Sensitivity Analysis the Fudge Factor","Fudge Factor","Frequency of N bound metals")
+  # ExportUnit.exportXY(temperatures,AnglePlotValues,"Temperatures","Angle Plot Values", "tempvsangles")
+  # ExportUnit.exportXY(temperatures,bondlengthAverage,"Temperatures","Bond length AVGs","tempvslengthavg")
+  # ExportUnit.exportXY(tempperfiles,[0]*len(tempperfiles),"Temperatures Per File", "Dummy","tempperfile")
+  renderModule.scatterPlot(tempMetalBound,metalBoundAngle,"metal bound AnglePlot(Y) vs Temperatures(X)","Temperatures","Angles")
+  renderModule.scatterPlot(tempMetalBound,metalBoundLengthAvg,"metal Bound bond length AVG(Y) vs Temperatures(X)","Temperatures","Length AVg")
+  ExportUnit.exportXY(tempMetalBound,metalBoundAngle,"temp metal bound","SNS angle metal bound","metalboundtempvsangle")
+  ExportUnit.exportXY(tempMetalBound,metalBoundLengthAvg,"temp metal bound","Bond length avg metal bound","metalboundtempvsbondlengthaverage")
+
   
 
 def GenerateAllGraphs(folder, AnglePlotValues, names, bondlengthAverage, atomOccurences):
@@ -308,7 +344,60 @@ Below code extracts data for several different moeities of TFSI from an excel sh
 
 def main():
   MetalBinding()
-  
+  #tempHistogram()
+  #getfilesWithMetals()
+
+def tempHistogram():
+  folder="TFSI_NoDisorder" # Folder name containing all the CIF files
+  datasetPath=os.listdir(folder)
+  temperatureValues=[]
+  progress=0
+  for file in datasetPath:
+    print(f"Progress: {progress}/{len(datasetPath)}")
+    molecule=CIFParser(f"{folder}/{file}")
+    if(not molecule.validFile):
+          progress+=1
+          continue
+    if("structure_temperature" in molecule.cellvalues):
+      temperatureValues.append(molecule.cellvalues["structure_temperature"])
+    progress+=1
+  renderModule=Render()
+  renderModule.plotHistogram(temperatureValues,"Structure Temperature Distribution","Temperature (K)","Frequency")
+
+def getfilesWithMetals():
+  folder="TFSI_NoDisorder" # Folder name containing all the CIF files
+  datasetPath=os.listdir(folder)
+  numcifswithmetalpresent=0
+  ciffilesnameswithmetal=""
+  progress=0
+  testParse=CIFParser(os.path.join(folder,datasetPath[0]))
+  atomToLookFor=list(testParse.covalentRadii.keys()) # Retrieves the list of colavent radii for each atom
+  testhash={}
+  for file in datasetPath:
+    
+    print(f"Progress: {progress}/{len(datasetPath)}")
+    molecule=CIFParser(f"{folder}/{file}")
+    if(not molecule.validFile):
+          progress+=1
+          continue
+    for atom in atomToLookFor:
+      if(molecule.containsAtom(atom)):
+        numcifswithmetalpresent+=1
+        ciffilesnameswithmetal+=f"{file} contains {atom}\n"
+        if(atom not in testhash):
+          testhash[atom]=1
+        else:
+          testhash[atom]+=1
+        break
+    progress+=1
+  print("Number of CIFs with metal present: ",numcifswithmetalpresent)
+  print("Names of CIFs: \n",ciffilesnameswithmetal)
+  countsum=0
+  for key in testhash:
+    countsum+=testhash[key]
+    print(f"{key} : {testhash[key]}")
+  print(f"Total number of metals found: {countsum}")
+
 main()
 
 
