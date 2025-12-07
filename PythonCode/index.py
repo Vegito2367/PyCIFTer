@@ -4,7 +4,6 @@ import numpy as np
 from graph import Graph
 from render import Render,ExportUnit
 from interactiveGraphs import InteractivePlot
-import pandas as pd
 from collections import Counter
 
 
@@ -42,25 +41,23 @@ def getTorsionAngle(A,B,C,D):
 
 ######################################################SNSManipulation
 
-def IdentifySNSBonds(molecule,lowerLimit,upperLimit,invalidFiles):
-      sulphurs=[]
-      nitrogens=[]
+def IdentifySNSBonds(molecule,lowerlimit,upperlimit,invalidFiles):
       distanceValues={}
       occurences={}
-      nitrogens=molecule.getElementAtoms("N")
-      sulphurs=molecule.getElementAtoms("S")
+      centralAtoms=molecule.getElementAtoms("N")
+      edgeAtoms=molecule.getElementAtoms("S")
       
       
-      for n in nitrogens:
-        for s in sulphurs:
-          distance=n.getDistance(s)
+      for c in centralAtoms:
+        for e in edgeAtoms:
+          distance=c.getDistance(e)
 
-          if(distance<=(n.covalentRadius+s.covalentRadius+1)):
-            distanceValues[(n,s)]=distance
-            if(n in occurences):
-              occurences[n]+=1
+          if(distance<=(c.covalentRadius+c.covalentRadius+1)):
+            distanceValues[(c,e)]=distance
+            if(c in occurences):
+              occurences[c]+=1
             else:
-              occurences[n]=1
+              occurences[c]=1
       
       if(len(distanceValues)==0):
         invalidFiles.append([molecule.fileName,"No S-N bonds found"])
