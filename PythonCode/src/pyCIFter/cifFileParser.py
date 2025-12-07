@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from atom import Atom
+from .atom import Atom
 import os
 
 class CIFParser:

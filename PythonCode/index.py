@@ -1,11 +1,6 @@
-from cifFileParser import CIFParser
 import os
+from pyCIFter import CIFParser, Graph, Render, ExportUnit, InteractivePlot
 import numpy as np
-from graph import Graph
-from render import Render,ExportUnit
-from interactiveGraphs import InteractivePlot
-from collections import Counter
-
 
 '''
 Vector math utilities
