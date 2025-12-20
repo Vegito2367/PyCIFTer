@@ -1,5 +1,5 @@
 import os
-from pyCIFter import CIFParser, Graph, Render, ExportUnit, InteractivePlot
+from pycifter import CIFParser, Graph, Render, ExportUnit, InteractivePlot
 import numpy as np
 
 '''

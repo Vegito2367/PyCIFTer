@@ -1,3 +1,16 @@
 \__pycache__
 .DS_Store
 *.DS_Store
+
+# Build and distribution directories
+PythonCode/build/
+PythonCode/pycifter-package/dist/
+*.egg-info/
+
+# Virtual environments
+venv/
+testvenv/
+
+# Python cache
+__pycache__/
+*.pyc
