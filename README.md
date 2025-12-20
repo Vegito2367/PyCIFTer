@@ -2,6 +2,8 @@
 
 This repository contains Python code for PyCIFTer, a program I made to analyze X-ray crystallographic data of bis(trifluoromethanesulfonyl)imide (TFSI) compounds. View at:
 
+[Published Article](https://www.mdpi.com/1420-3049/31/1/18#B62-molecules-31-00018)
+
 [Graphs Dashboard Here](https://tfsi-research.vercel.app/)
 
 ## Overview
@@ -22,12 +24,12 @@ The tool uses python. The latest version of the program was run using python 3.1
 Install the required packages using pip:
 
 ```bash
-pip install -r requirements.txt
+pip install pycifter
 ```
 
-## Scripts
+## Components of PyCIFTer
 
-- `index.py` : Executes the main analysis pipeline
+- `index.py` : Main script used in research to demonstrate effectiveness of pycifter. Executes the main analysis pipeline
 - `cifFileParser.py`: TFSI structural analysis functions
 - `render.py`: Plotting and visualization functions
 - `heatmap.py`: Interactive rendering
