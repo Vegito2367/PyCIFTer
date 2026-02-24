@@ -2,7 +2,7 @@
 
 This repository contains Python code for PyCIFTer, a program I made to analyze X-ray crystallographic data of bis(trifluoromethanesulfonyl)imide (TFSI) compounds. View at:
 
-[Published Article](https://www.mdpi.com/1420-3049/31/1/18#B62-molecules-31-00018)
+[Published Article](https://www.mdpi.com/1420-3049/31/1/18)
 
 [Graphs Dashboard Here](https://tfsi-research.vercel.app/)
 
