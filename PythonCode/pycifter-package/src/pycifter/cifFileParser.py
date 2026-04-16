@@ -1,11 +1,9 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from .atom import Atom
-import os
 
 class CIFParser:
   
-  def __init__(self,filePath):
+  def __init__(self,filePath: str):
     #Stores the covalent radii of the metals of interest
     self.covalentRadii={  #Taken from some paper
       "Cu":1.32,
@@ -28,8 +26,8 @@ class CIFParser:
     myfile=open(filePath,'r')
     self.fileName=myfile.name
     self.validFile=True
-    self.cellvalues={}
-    self.Atoms=[]
+    self.cellvalues:dict[str,float]={}
+    self.Atoms: list[Atom]=[]
     alllines=myfile.read().split("\n")
     '''
     Below Try catch is used to validate the file.
@@ -86,7 +84,10 @@ class CIFParser:
         self.cellvalues["cell_angle_gamma"]=(float(val))
     
     #Loading up the rows of atom coordinates and symbols
-    textofInterest=alllines[startIndex:alllines.index("#END")]
+    linesWithAtomInformationValues=alllines[startIndex:alllines.index("#END")]
+    """
+    This contains the atom symbol, identifier and the three spherical coordinates in one line
+    """
 
     '''
     The CIF coordinate system is different from the Cartesian coordinate system.
@@ -101,7 +102,7 @@ class CIFParser:
 
     self.cellvalues["cell_astar"]=np.arccos(astarnum/astardenom)
 
-    ConversionMatrix=[
+    ConversionMatrix:list[list[float]]=[
       [self.a(),self.b() * self.cos(self.gamma()),self.c() * self.cos(self.beta())],
                       
       [0, self.b() * self.sin(self.gamma()), -1 * self.c() * self.sin(self.beta()) * self.cos(self.cellvalues["cell_astar"])],
@@ -113,36 +114,37 @@ class CIFParser:
 
     #The conversion matrix is passed to each new atom object to convert the spherical coordinates to Cartesian coordinates
     #The reason the conversion matrix is not generated in each atom itself is because its unique to each CIF file's cell values.
-    for j in textofInterest:
+    for j in linesWithAtomInformationValues:
       self.Atoms.append(Atom(j.split(" "),self.ConversionMatrix,self.covalentRadii,self.nonMetalRadii))
 
   '''
   Start of auxilliary functions to help store values and conduct utility operations on all atoms of a given molecule.
   '''
-  def getElementAtoms(self,symbol):
-    output=[]
+  def getElementAtoms(self,symbol: str) -> list[Atom]:
+    output:list[Atom]=[]
     for j in range(len(self.Atoms)):
       if(self.Atoms[j].symbol == symbol):
         output.append(self.Atoms[j])
 
     return output
   
-  def containsAtom(self,symbol):
+  def containsAtom(self,symbol: str) -> bool:
     atoms=self.getElementAtoms(symbol)
     return len(atoms)>0
-  def getAtomsInARadius(self,targetAtom : Atom,radius: float):
+  
+  def getAtomsInARadius(self,targetAtom : Atom,radius: float) -> list[tuple[Atom,float]]:
     '''
     rtype: [[Atom, float]]
     float represents the distance between Atom and the target atom
     '''
-    output=[]
+    output:list[tuple[Atom,float]]=[]
     for atom in self.Atoms:
       dist=atom.getDistance(targetAtom)
       if(dist<=radius):
-        output.append([atom,dist])
+        output.append((atom,dist))
     return output
   
-  def getParticularAtom(self,identifier):
+  def getParticularAtom(self,identifier:str):
     for atom in self.Atoms:
       if(atom.identifier==identifier):
         return atom
@@ -152,10 +154,10 @@ class CIFParser:
   Start of getter functions to make the matrix construction easier to read
   '''
   
-  def cos(self,x):
+  def cos(self,x:float) -> float:
     return np.cos(x)
   
-  def sin(self,x):
+  def sin(self,x: float) -> float:
     return np.sin(x)
   
   

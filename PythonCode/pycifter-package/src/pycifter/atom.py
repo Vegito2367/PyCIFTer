@@ -1,9 +1,12 @@
 import numpy as np
 class Atom:
-  def __init__(self, inputList,conversionMatrix,radii,nonMetalRadii):
+  def __init__(self, inputList:list[str],conversionMatrix,radii: dict[str,float],nonMetalRadii: dict[str,float]):
     
-    self.covalentRadius=0
-    elemname=inputList.pop(0)
+    #Sample CIF file row for reference
+    # K1 K 0.09311(7) 0.48374(6) 0.27798(6)
+
+    self.covalentRadius:float=0
+    elemname=inputList.pop(0) # Gets the atom identifier
     self.identifier=elemname
     ind1,ind2=0,0
     for i in range(len(elemname)):
@@ -26,18 +29,19 @@ class Atom:
 
 
 
-    self.symbol=inputList.pop(0)
-    positionVector=[inputList.pop(0),inputList.pop(0),inputList.pop(0)]
-
+    self.symbol=inputList.pop(0) # pops the symbol
+    positionVectorWithUncertainty:list[str]=[inputList.pop(0),inputList.pop(0),inputList.pop(0)]
+    intermediaryVectors:list[float]=[0,0,0]
     for v in range(3):
-      elem=positionVector[v]
+      elem=positionVectorWithUncertainty[v]
       if ('(' in elem ):
-        positionVector[v]=float(elem[:elem.index("(")])
+        intermediaryVectors[v]=float(elem[:elem.index("(")])
       else:
-        positionVector[v]=float(elem)
+        intermediaryVectors[v]=float(elem)
       
-    positionVector=np.array(positionVector)
-    self.positionVector=np.matmul(conversionMatrix,positionVector)
+    positionVectorCleanedSpherical=np.array(intermediaryVectors)
+
+    self.positionVector=np.matmul(conversionMatrix,positionVectorCleanedSpherical)
     self.remainingNumbers=inputList
 
     if(self.symbol in radii):
@@ -52,7 +56,7 @@ class Atom:
     return self.identifier
   
 
-  def getDistance(self,other):
+  def getDistance(self,other:Atom) -> float:
     distanceVector=[round(self.positionVector[i]-other.positionVector[i],6) for i in range(3)]
     output=0
     for j in distanceVector:
@@ -60,13 +64,12 @@ class Atom:
     
     return round(output**0.5,3)
   
-  def __eq__(self, other):
+  def __eq__(self, other:Atom) -> bool:
     for i in range(3):
       if(self.positionVector[i]!=other.positionVector[i]):
         return False
     
     return True
-  
   
   
   def __hash__(self):
